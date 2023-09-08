@@ -12,19 +12,10 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.pipeline import Pipeline
 
 from src.common.constants import ARTIFACT_PATH, DATA_PATH, LOG_FILEPATH
-from src.common.logger import (
-    handle_exception,
-    log_feature_importance,
-    set_logger,
-)
 from src.common.metrics import rmse_cv_score
 from src.common.utils import get_param_set
-from src.preprocess import preprocess_pipeline
+from preprocess import preprocess_pipeline
 
-# 로그 들어갈 위치
-# TODO: 로그를 정해진 로그 경로에 logs.log로 저장하도록 설정
-logger = set_logger(os.path.join(LOG_FILEPATH, "logs.log"))
-sys.excepthook = handle_exception
 warnings.filterwarnings(action="ignore")
 
 
@@ -36,7 +27,6 @@ if __name__ == "__main__":
 
     X = preprocess_pipeline.fit_transform(X=_X, y=y)
 
-    logger.info("Saving the feature data ...")
     # Data storage - 피처 데이터 저장
     if not os.path.exists(os.path.join(DATA_PATH, "storage")):
         os.makedirs(os.path.join(DATA_PATH, "storage"))
@@ -55,7 +45,7 @@ if __name__ == "__main__":
     param_set = get_param_set(params=params_candidates)
 
     # Set experiment name for mlflow
-    logger.info("Setting a new Experiment for MLflow ...")
+
     experiment_name = "new_experiment_with_log"
     mlflow.set_experiment(experiment_name=experiment_name)
     mlflow.set_tracking_uri("./mlruns")  # default
@@ -81,7 +71,7 @@ if __name__ == "__main__":
 
             # 로깅 정보: 평가 메트릭
             mlflow.log_metrics({"RMSE_CV": score_cv.mean()})
-            logger.info(f"RMSE CV Score for {run_name} : {score_cv.mean()}")
+
 
             # 로깅 정보 : 학습 loss
             for s in regr.train_score_:
@@ -97,7 +87,7 @@ if __name__ == "__main__":
             mlflow.log_artifact(ARTIFACT_PATH)
 
             # generate a chart for feature importance
-            log_feature_importance(train=X, model=regr)
+            # log_feature_importance(train=X, model=regr)
 
     # Find the best regr
     best_run_df = mlflow.search_runs(
@@ -109,7 +99,7 @@ if __name__ == "__main__":
 
     best_run = mlflow.get_run(best_run_df.at[0, "run_id"])
     best_params = best_run.data.params
-    logger.info(f"Best Hyper-parameter : {best_params}")
+
 
     best_model_uri = f"{best_run.info.artifact_uri}/model"
 
